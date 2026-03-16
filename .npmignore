@@ -49,4 +49,8 @@ commit.sh
 release.sh
 *.md
 !LICENSE.md
+# Include AI integration guides
+!guide/
+!guide/*.md
+!guide/**/*.md
 
