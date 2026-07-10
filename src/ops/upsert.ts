@@ -9,6 +9,7 @@ import {
   UpsertMethod
 } from "@fjell/types";
 import {
+  abbrevIK,
   executeWithContext,
   OperationContext
 } from "@fjell/core";
@@ -83,14 +84,14 @@ export const wrapUpsertOperation = <
               component: 'lib',
               operation: 'upsert',
               phase: 'get-existing',
-              key: JSON.stringify(key),
+              key: abbrevIK(key),
               itemType: coordinate.kta[0],
               errorType: error?.constructor?.name || typeof error,
               errorMessage: error?.message,
               errorName: error?.name,
               errorCode: error?.errorInfo?.code,
               suggestion: 'Check database connectivity, permissions, and key validity',
-              coordinate: JSON.stringify(coordinate)
+              coordinate: String(coordinate)
             });
             throw error;
           }
@@ -111,12 +112,12 @@ export const wrapUpsertOperation = <
           logger.error('Failed to retrieve or create item during upsert', {
             component: 'lib',
             operation: 'upsert',
-            key: JSON.stringify(key),
+            key: abbrevIK(key),
             itemType: coordinate.kta[0],
             suggestion: 'This should not happen. Check create operation implementation and error handling.',
-            coordinate: JSON.stringify(coordinate)
+            coordinate: String(coordinate)
           });
-          throw new Error(`Failed to retrieve or create item for upsert with key: ${JSON.stringify(key)}`);
+          throw new Error(`Failed to retrieve or create item for upsert with key: ${abbrevIK(key)}`);
         }
 
         // After a successful create, skip redundant update unless replace was requested.
@@ -147,7 +148,7 @@ export const wrapUpsertOperation = <
 
             if (isNotFoundOnUpdate && retryAttempts < maxRetries) {
               logger.warning('Item not found during update, retrying upsert (likely concurrent deletion)', {
-                key: JSON.stringify(key),
+                key: abbrevIK(key),
                 attempt: retryAttempts + 1,
                 maxRetries
               });
@@ -165,13 +166,13 @@ export const wrapUpsertOperation = <
               component: 'lib',
               operation: 'upsert',
               phase: 'update',
-              key: JSON.stringify(key),
+              key: abbrevIK(key),
               itemType: coordinate.kta[0],
               errorType: updateError?.constructor?.name || typeof updateError,
               errorMessage: updateError?.message,
               retryAttempts,
               maxRetries,
-              coordinate: JSON.stringify(coordinate)
+              coordinate: String(coordinate)
             });
             throw updateError;
           }
