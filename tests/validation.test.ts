@@ -203,7 +203,7 @@ describe('Validation Library Integration', () => {
 
       const result = await updateOp({ pk: "123" }, validUpdate);
       expect(result).toEqual(validUpdate);
-      expect(mockOperations.update).toHaveBeenCalledWith({ pk: "123" }, validUpdate);
+      expect(mockOperations.update).toHaveBeenCalledWith({ pk: "123" }, validUpdate, undefined);
     });
 
     it('should fail validation with invalid partial update', async () => {

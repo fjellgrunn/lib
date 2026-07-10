@@ -8,31 +8,9 @@ Server-side data operations library for Fjell.
 npm install @fjell/lib @fjell/core @fjell/registry
 ```
 
-## Breaking Changes in v5.0.0
+## Current line (4.4.x)
 
-The Operations interface now extends from `@fjell/core`. This provides:
-- Consistent interface across all fjell packages
-- Centralized validation logic
-- Better type safety
-
-### Migration from v4.x
-
-The API remains the same, but imports may need updating:
-
-```typescript
-// Before
-import { Operations } from '@fjell/lib';
-
-// After (still works)
-import { Operations } from '@fjell/lib';
-
-// Or import types directly from core
-import { OperationParams, AffectedKeys } from '@fjell/core';
-```
-
-No code changes required unless you were using internal types.
-
-See [MIGRATION_v5.md](./MIGRATION_v5.md) for detailed migration guide.
+This package is on the **4.4.x** line. Operations types are shared with `@fjell/core` where applicable; you can import `Operations` from `@fjell/lib` or related types from `@fjell/core` as needed. There is no v5 major release yet—ignore any older references to a v5 migration guide.
 
 ## Quick Start
 

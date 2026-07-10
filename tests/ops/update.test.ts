@@ -72,7 +72,7 @@ describe('wrapUpdateOperation', () => {
 
       const result = await updateOperation(key, item);
 
-      expect(mockOperations.update).toHaveBeenCalledWith(key, item);
+      expect(mockOperations.update).toHaveBeenCalledWith(key, item, undefined);
       expect(result).toEqual(expectedItem);
     });
 
@@ -123,7 +123,7 @@ describe('wrapUpdateOperation', () => {
       const result = await updateOperation(key, originalItem);
 
       expect(preUpdateHook).toHaveBeenCalledWith(key, originalItem);
-      expect(mockOperations.update).toHaveBeenCalledWith(key, { name: 'hook-modified-name', id: 'hook-id' });
+      expect(mockOperations.update).toHaveBeenCalledWith(key, { name: 'hook-modified-name', id: 'hook-id' }, undefined);
       expect(result).toEqual(expectedResult);
     });
 
@@ -170,7 +170,7 @@ describe('wrapUpdateOperation', () => {
 
       const result = await updateOperation(key, item);
 
-      expect(mockOperations.update).toHaveBeenCalledWith(key, item);
+      expect(mockOperations.update).toHaveBeenCalledWith(key, item, undefined);
       expect(result).toEqual(expectedResult);
     });
   });
@@ -408,7 +408,7 @@ describe('wrapUpdateOperation', () => {
 
       expect(preUpdateHook).toHaveBeenCalledWith(key, originalItem);
       expect(validator).toHaveBeenCalledWith(key, { name: 'pre-hook-modified' });
-      expect(mockOperations.update).toHaveBeenCalledWith(key, { name: 'pre-hook-modified' });
+      expect(mockOperations.update).toHaveBeenCalledWith(key, { name: 'pre-hook-modified' }, undefined);
       expect(postUpdateHook).toHaveBeenCalledWith(updateResult);
       expect(result).toEqual({
         id: 'post-hook-id',
@@ -521,7 +521,7 @@ describe('wrapUpdateOperation', () => {
       const result = await updateOperation(key, item);
 
       expect(mockOperations.get).toHaveBeenCalledWith(key);
-      expect(mockOperations.update).toHaveBeenCalledWith(key, item);
+      expect(mockOperations.update).toHaveBeenCalledWith(key, item, undefined);
       expect(onChangeHook).toHaveBeenCalledWith(originalItem, updatedItem);
       expect(result).toEqual(updatedItem);
     });
@@ -982,7 +982,7 @@ describe('wrapUpdateOperation', () => {
 
       const result = await updateOperation(key, item);
 
-      expect(mockOperations.update).toHaveBeenCalledWith(key, {});
+      expect(mockOperations.update).toHaveBeenCalledWith(key, {}, undefined);
       expect(result).toEqual(expectedResult);
     });
 

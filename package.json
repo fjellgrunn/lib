@@ -1,7 +1,7 @@
 {
   "name": "@fjell/lib",
   "description": "Server-side Library for Fjell",
-  "version": "4.4.90-dev.0",
+  "version": "4.4.90",
   "keywords": [
     "library",
     "persistence",
@@ -25,7 +25,7 @@
     }
   },
   "scripts": {
-    "build": "tsc --project tsconfig.declarations.json && node build.js",
+    "build": "npm run lint && tsc --project tsconfig.declarations.json && node build.js",
     "dev": "concurrently \"tsc --watch --project tsconfig.declarations.json\" \"node build.js --watch\"",
     "lint": "eslint . --ext .ts --fix",
     "clean": "rm -rf dist",
@@ -38,33 +38,33 @@
     "docs:test": "cd docs && npm run test"
   },
   "dependencies": {
-    "@fjell/core": "^4.4.79",
-    "@fjell/logging": "^4.4.72",
-    "@fjell/registry": "^4.4.86",
-    "@fjell/types": "^4.4.9",
-    "@fjell/validation": "^4.4.6",
+    "@fjell/core": "^4.4.80",
+    "@fjell/logging": "^4.4.73",
+    "@fjell/registry": "^4.4.87",
+    "@fjell/types": "^4.4.10",
+    "@fjell/validation": "^4.4.7",
     "deepmerge": "^4.3.1"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.38.0",
-    "@fjell/common-config": "^1.1.38",
-    "@swc/core": "^1.13.5",
-    "@tsconfig/recommended": "^1.0.10",
-    "@types/multer": "^2.0.0",
-    "@types/node": "^24.9.1",
-    "@typescript-eslint/eslint-plugin": "^8.46.2",
-    "@typescript-eslint/parser": "^8.46.2",
-    "@vitest/coverage-v8": "^4.0.2",
-    "concurrently": "^9.2.1",
-    "esbuild": "0.25.11",
-    "eslint": "^9.38.0",
-    "nodemon": "^3.1.10",
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^9.39.4",
+    "@fjell/common-config": "^1.1.41",
+    "@swc/core": "^1.15.43",
+    "@tsconfig/recommended": "^1.0.13",
+    "@types/multer": "^2.2.0",
+    "@types/node": "^24.13.3",
+    "@typescript-eslint/eslint-plugin": "^8.63.0",
+    "@typescript-eslint/parser": "^8.63.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "concurrently": "^9.2.3",
+    "esbuild": "0.28.1",
+    "eslint": "^9.39.4",
+    "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
-    "tsc-alias": "^1.8.16",
+    "tsc-alias": "^1.9.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.2",
-    "zod": "^4.1.12"
+    "vitest": "^4.1.10",
+    "zod": "^4.4.3"
   },
   "repository": {
     "type": "git",

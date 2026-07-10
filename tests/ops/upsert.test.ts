@@ -67,15 +67,45 @@ describe('upsert', () => {
         throw new NotFoundError('get', coordinate, key, {});
       });
       createMethodMock.mockResolvedValueOnce({ ...testItem, action: 'created', key } as Item<'test'>);
-      updateMethodMock.mockResolvedValueOnce({ ...testItem, action: 'updated', key } as Item<'test'>);
 
       const registry = createRegistry();
       const result = await wrapUpsertOperation(operations, coordinate, registry)(key, itemProperties);
       expect(result).toBeDefined();
-      expect(result.action).toBe('updated');
+      expect(result.action).toBe('created');
       expect(getMethodMock).toHaveBeenCalled();
-      expect(createMethodMock).toHaveBeenCalled();
-      expect(updateMethodMock).toHaveBeenCalled();
+      expect(createMethodMock).toHaveBeenCalledWith(itemProperties, { key });
+      expect(updateMethodMock).not.toHaveBeenCalled();
+    });
+
+    test('should create when get returns null', async () => {
+      const key = { kt: 'test', pk: randomUUID() } as PriKey<'test'>;
+      const testItem = { name: 'newItem', key } as unknown as Item<'test'>;
+      const itemProperties = { name: 'newItem' } as Partial<Item<'test'>>;
+      const coordinate = createCoordinate<'test'>(['test'], []);
+
+      getMethodMock.mockResolvedValueOnce(null);
+      createMethodMock.mockResolvedValueOnce({ ...testItem, action: 'created', key } as Item<'test'>);
+
+      const registry = createRegistry();
+      const result = await wrapUpsertOperation(operations, coordinate, registry)(key, itemProperties);
+      expect(result.action).toBe('created');
+      expect(createMethodMock).toHaveBeenCalledWith(itemProperties, { key });
+      expect(updateMethodMock).not.toHaveBeenCalled();
+    });
+
+    test('should pass key and locations to create for contained items', async () => {
+      const key = { kt: 'test', pk: randomUUID(), loc: [{ kt: 'level1', lk: 'loc1' }] } as any;
+      const locations = [{ kt: 'level1', lk: 'loc1' }] as any;
+      const testItem = { name: 'newItem', key } as unknown as Item<'test'>;
+      const itemProperties = { name: 'newItem' } as Partial<Item<'test'>>;
+      const coordinate = createCoordinate<'test'>(['test'], []);
+
+      getMethodMock.mockResolvedValueOnce(null);
+      createMethodMock.mockResolvedValueOnce({ ...testItem, action: 'created', key } as Item<'test'>);
+
+      const registry = createRegistry();
+      await wrapUpsertOperation(operations, coordinate, registry)(key, itemProperties, locations);
+      expect(createMethodMock).toHaveBeenCalledWith(itemProperties, { key, locations });
     });
 
     test('should update new item if exists', async () => {
@@ -93,7 +123,21 @@ describe('upsert', () => {
       expect(result.action).toBe('updated');
       expect(getMethodMock).toHaveBeenCalled();
       expect(createMethodMock).not.toHaveBeenCalled();
-      expect(updateMethodMock).toHaveBeenCalled();
+      expect(updateMethodMock).toHaveBeenCalledWith(key, itemProperties, undefined);
+    });
+
+    test('should forward UpdateOptions.replace on existing item', async () => {
+      const key = { kt: 'test', pk: randomUUID() } as PriKey<'test'>;
+      const testItem = { name: 'newItem', key } as unknown as Item<'test'>;
+      const itemProperties = { name: 'newItem' } as Partial<Item<'test'>>;
+      const coordinate = createCoordinate<'test'>(['test'], []);
+
+      getMethodMock.mockResolvedValueOnce(testItem);
+      updateMethodMock.mockResolvedValueOnce({ ...testItem, action: 'updated', key } as Item<'test'>);
+
+      const registry = createRegistry();
+      await wrapUpsertOperation(operations, coordinate, registry)(key, itemProperties, undefined, { replace: true });
+      expect(updateMethodMock).toHaveBeenCalledWith(key, itemProperties, { replace: true });
     });
 
     test('should rethrow non-NotFoundError errors from get', async () => {
