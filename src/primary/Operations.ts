@@ -7,7 +7,7 @@ import {
   OperationParams
 } from "@fjell/types";
 import { ActionMethod, AllActionMethod, AllFacetMethod, FacetMethod, FinderMethod, Options } from "../Options";
-import { wrapOperations as wrapAbstractOperations } from "../Operations";
+import { wrapOperations as wrapAbstractOperations, Operations as AbstractOperations } from "../Operations";
 
 import LibLogger from "../logger";
 import { Registry } from "../Registry";
@@ -40,6 +40,13 @@ export const wrapOperations = <
 
 ): Operations<V, S> => {
   logger.debug("wrapOperations", { toWrap, options, coordinate, registry });
-  const operations = wrapAbstractOperations(toWrap as any, options as any, coordinate as any, registry);
-  return operations as any;
+  // Primary types use 2 type params (V, S) while abstract uses 7 (V, S, L1-L5 defaulting to never).
+  // Cast through the 7-param form with never defaults to bridge the parametricity gap safely.
+  const operations = wrapAbstractOperations(
+    toWrap as AbstractOperations<V, S, never, never, never, never, never>,
+    options as Options<V, S, never, never, never, never, never>,
+    coordinate as Coordinate<S, never, never, never, never, never>,
+    registry,
+  );
+  return operations as Operations<V, S>;
 };
