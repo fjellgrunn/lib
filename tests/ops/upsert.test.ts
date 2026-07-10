@@ -172,5 +172,89 @@ describe('upsert', () => {
       expect(updateMethodMock).not.toHaveBeenCalled();
     });
 
+
+    test('should retry update when item is deleted concurrently (race condition)', async () => {
+      const key = { kt: 'test', pk: randomUUID() } as PriKey<'test'>;
+      const testItem = { name: 'newItem', key } as unknown as Item<'test'>;
+      const itemProperties = { name: 'newItem' } as Partial<Item<'test'>>;
+      const coordinate = createCoordinate<'test'>(['test'], []);
+
+      getMethodMock.mockResolvedValueOnce(testItem);
+      updateMethodMock.mockImplementationOnce(() => {
+        throw new NotFoundError('update', coordinate, key, {});
+      });
+      createMethodMock.mockResolvedValueOnce({ ...testItem, action: 'created' } as Item<'test'>);
+      updateMethodMock.mockResolvedValueOnce({ ...testItem, action: 'updated' } as Item<'test'>);
+
+      const registry = createRegistry();
+      const result = await wrapUpsertOperation(operations, coordinate, registry)(
+        key, itemProperties, undefined, { retryCount: 1 } as any
+      );
+
+      expect(result.action).toBe('updated');
+      expect(getMethodMock).toHaveBeenCalledTimes(1);
+      expect(updateMethodMock).toHaveBeenCalledTimes(2);
+      expect(createMethodMock).toHaveBeenCalledTimes(1);
+    });
+
+    test('should throw after exhausting retries on repeated concurrent deletion', async () => {
+      const key = { kt: 'test', pk: randomUUID() } as PriKey<'test'>;
+      const testItem = { name: 'newItem', key } as unknown as Item<'test'>;
+      const itemProperties = { name: 'newItem' } as Partial<Item<'test'>>;
+      const coordinate = createCoordinate<'test'>(['test'], []);
+
+      getMethodMock.mockResolvedValueOnce(testItem);
+      updateMethodMock.mockImplementation(() => {
+        throw new NotFoundError('update', coordinate, key, {});
+      });
+      createMethodMock.mockResolvedValue({ ...testItem } as Item<'test'>);
+
+      const registry = createRegistry();
+      await expect(
+        wrapUpsertOperation(operations, coordinate, registry)(
+          key, itemProperties, undefined, { retryCount: 2 } as any
+        )
+      ).rejects.toThrow();
+
+      expect(updateMethodMock).toHaveBeenCalledTimes(3);
+      expect(createMethodMock).toHaveBeenCalledTimes(2);
+    });
+
+    test('should not retry on non-NotFoundError during update', async () => {
+      const key = { kt: 'test', pk: randomUUID() } as PriKey<'test'>;
+      const testItem = { name: 'newItem', key } as unknown as Item<'test'>;
+      const itemProperties = { name: 'newItem' } as Partial<Item<'test'>>;
+      const coordinate = createCoordinate<'test'>(['test'], []);
+
+      getMethodMock.mockResolvedValueOnce(testItem);
+      const dbError = new Error('Database connection lost');
+      updateMethodMock.mockImplementationOnce(() => { throw dbError; });
+
+      const registry = createRegistry();
+      await expect(
+        wrapUpsertOperation(operations, coordinate, registry)(
+          key, itemProperties, undefined, { retryCount: 3 } as any
+        )
+      ).rejects.toThrow('Database connection lost');
+
+      expect(updateMethodMock).toHaveBeenCalledTimes(1);
+      expect(createMethodMock).not.toHaveBeenCalled();
+    });
+
+    test('should pass retryCount option through to update', async () => {
+      const key = { kt: 'test', pk: randomUUID() } as PriKey<'test'>;
+      const testItem = { name: 'newItem', key } as unknown as Item<'test'>;
+      const itemProperties = { name: 'newItem' } as Partial<Item<'test'>>;
+      const coordinate = createCoordinate<'test'>(['test'], []);
+
+      getMethodMock.mockResolvedValueOnce(testItem);
+      updateMethodMock.mockResolvedValueOnce({ ...testItem, action: 'updated' } as Item<'test'>);
+
+      const registry = createRegistry();
+      const opts = { replace: true, retryCount: 2 } as any;
+      await wrapUpsertOperation(operations, coordinate, registry)(key, itemProperties, undefined, opts);
+      expect(updateMethodMock).toHaveBeenCalledWith(key, itemProperties, opts);
+    });
+
   });
 });

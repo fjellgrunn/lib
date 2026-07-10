@@ -127,11 +127,57 @@ export const wrapUpsertOperation = <
           return item;
         }
 
-        logger.debug('Updating item', { key: item.key, itemProperties });
-        item = await ops.update(item.key, itemProperties, options);
-        logger.debug('Item updated successfully', { item });
+        // Update with retry for concurrent deletion/modification.
+        // If the item was deleted between our get and update (race condition),
+        // retry by re-creating it. This handles the most common race scenario.
+        const maxRetries = options?.retryCount ?? 0;
+        let retryAttempts = 0;
+        let updateResult: V | null = null;
 
-        return item;
+        while (retryAttempts <= maxRetries) {
+          try {
+            logger.debug('Updating item', { key: item.key, itemProperties, attempt: retryAttempts });
+            updateResult = await ops.update(item.key, itemProperties, options);
+            logger.debug('Item updated successfully', { item: updateResult });
+            break;
+          } catch (updateError: any) {
+            const isNotFoundOnUpdate = updateError instanceof NotFoundError ||
+              updateError?.name === 'NotFoundError' ||
+              updateError?.errorInfo?.code === 'NOT_FOUND';
+
+            if (isNotFoundOnUpdate && retryAttempts < maxRetries) {
+              logger.warning('Item not found during update, retrying upsert (likely concurrent deletion)', {
+                key: JSON.stringify(key),
+                attempt: retryAttempts + 1,
+                maxRetries
+              });
+              retryAttempts++;
+              // Re-create the item since it was deleted
+              const createOptions = locations
+                ? ({ key, locations } as any)
+                : { key };
+              item = await ops.create(itemProperties, createOptions);
+              continue;
+            }
+
+            // Re-throw if not NotFoundError or retries exhausted
+            logger.error('Update failed during upsert', {
+              component: 'lib',
+              operation: 'upsert',
+              phase: 'update',
+              key: JSON.stringify(key),
+              itemType: coordinate.kta[0],
+              errorType: updateError?.constructor?.name || typeof updateError,
+              errorMessage: updateError?.message,
+              retryAttempts,
+              maxRetries,
+              coordinate: JSON.stringify(coordinate)
+            });
+            throw updateError;
+          }
+        }
+
+        return updateResult!;
       },
       context
     );
