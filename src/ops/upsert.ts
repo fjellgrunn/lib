@@ -54,6 +54,8 @@ export const wrapUpsertOperation = <
     return executeWithContext(
       async () => {
         let item: V | null = null;
+        let created = false;
+        let attemptedCreate = false;
         try {
           logger.debug('Retrieving item by key', { key });
           item = await ops.get(key);
@@ -67,8 +69,14 @@ export const wrapUpsertOperation = <
 
           if (isNotFound) {
             logger.debug('Item not found, creating new item', { key, errorType: error?.name, errorCode: error?.errorInfo?.code });
-            const createOptions = locations ? { locations } : { key };
+            // CreateOptions is key XOR locations at the type level; backends that need both
+            // (e.g. sequelize contained creates) accept both at runtime.
+            const createOptions = locations
+              ? ({ key, locations } as any)
+              : { key };
+            attemptedCreate = true;
             item = await ops.create(itemProperties, createOptions);
+            created = !!item;
           } else {
             // Re-throw other errors (connection issues, permissions, etc.)
             logger.error('Unexpected error during upsert get operation', {
@@ -88,6 +96,17 @@ export const wrapUpsertOperation = <
           }
         }
 
+        // Some backends (e.g. lib-fs) return null on miss instead of throwing NotFoundError
+        if (!item && !attemptedCreate) {
+          logger.debug('Item get returned null, creating new item', { key });
+          const createOptions = locations
+            ? ({ key, locations } as any)
+            : { key };
+          attemptedCreate = true;
+          item = await ops.create(itemProperties, createOptions);
+          created = !!item;
+        }
+
         if (!item) {
           logger.error('Failed to retrieve or create item during upsert', {
             component: 'lib',
@@ -98,6 +117,14 @@ export const wrapUpsertOperation = <
             coordinate: JSON.stringify(coordinate)
           });
           throw new Error(`Failed to retrieve or create item for upsert with key: ${JSON.stringify(key)}`);
+        }
+
+        // After a successful create, skip redundant update unless replace was requested.
+        // This matches backend-native upsert semantics (create OR update) and avoids
+        // double hook firing / extra race window on the create path.
+        if (created && !options?.replace) {
+          logger.debug('Item created during upsert, skipping redundant update', { key: item.key });
+          return item;
         }
 
         logger.debug('Updating item', { key: item.key, itemProperties });

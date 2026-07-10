@@ -112,6 +112,7 @@ export const wrapRemoveOperation = <
         );
       }
     } catch (error: unknown) {
+      if (error instanceof RemoveValidationError) throw error;
       throw new RemoveValidationError(
         { key },
         coordinate,

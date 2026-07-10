@@ -3,7 +3,8 @@ import {
   Coordinate,
   Item,
   PriKey,
-  UpdateMethod
+  UpdateMethod,
+  UpdateOptions
 } from "@fjell/types";
 import {
   executeWithContext,
@@ -37,10 +38,11 @@ export const wrapUpdateOperation = <
 
   const update = async (
     key: PriKey<S> | ComKey<S, L1, L2, L3, L4, L5>,
-    item: Partial<Item<S, L1, L2, L3, L4, L5>>
+    item: Partial<Item<S, L1, L2, L3, L4, L5>>,
+    updateOptions?: UpdateOptions
   ): Promise<V> => {
     try {
-      logger.debug('update', { key, item });
+      logger.debug('update', { key, item, updateOptions });
 
       // Fetch original item if onChange hook is present
       let originalItem: V | null | undefined;
@@ -80,7 +82,7 @@ export const wrapUpdateOperation = <
       let updatedItem: V;
       try {
         updatedItem = await executeWithContext(
-          () => toWrap.update(key, itemToUpdate),
+          () => toWrap.update(key, itemToUpdate, updateOptions),
           context
         );
       } catch (updateError) {

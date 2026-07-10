@@ -212,8 +212,13 @@ export class CreateValidationError<
       cause?: Error
     }
   ) {
+    const keyInfo = parameters.options?.key
+      ? `key: ${abbrevIK(parameters.options.key)}`
+      : parameters.options?.locations
+        ? `locations: ${JSON.stringify(parameters.options.locations)}`
+        : 'no key/locations';
     super(
-      `Create Validation Failed: ${JSON.stringify(parameters)}`,
+      `Create Validation Failed: ${keyInfo}`,
       'create',
       coordinate,
       options
@@ -240,8 +245,9 @@ export class UpdateValidationError<
       cause?: Error
     }
   ) {
+    const keyInfo = parameters.key ? `key: ${abbrevIK(parameters.key)}` : 'key: undefined';
     super(
-      `Update Validation Failed: ${JSON.stringify(parameters)}`,
+      `Update Validation Failed: ${keyInfo}`,
       'update',
       coordinate,
       options
